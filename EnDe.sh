@@ -1,7 +1,28 @@
 #!/bin/bash
 
+
+BLUE='\033[1;34m'
+NC='\033[0m'
+
+banner_ende() {
+  clear
+  echo -e "${BLUE}"
+  cat << "EOF"
+███████╗███╗   ██╗██████╗ ███████╗
+██╔════╝████╗  ██║██╔══██╗██╔════╝
+█████╗  ██╔██╗ ██║██║  ██║█████╗  
+██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  
+███████╗██║ ╚████║██████╔╝███████╗
+╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝
+EOF
+  echo -e "${NC}"
+}
+
+
+
 main_menu() {
     while true; do
+        banner_ende
         echo "======================"
         echo "        MAIN MENU"
         echo "======================"
@@ -28,6 +49,7 @@ Encryption_Menu() {
         echo "---- ENCRYPTION MENU ----"
         echo "1) Encrypt with existing key file"
         echo "2) Back"
+        echo "3) Encrypt with aysemetric key (Not implemented)"
         echo -n "Enter choice [1-2]: "
         read subchoice
         case $subchoice in
@@ -73,6 +95,10 @@ Encryption_Menu() {
                 fi
                 ;;
             2) return ;;
+            3)  open ssl gpg -h
+                # Placeholder for future asymmetric encryption implementation
+                ;;
+               
             *) echo "Invalid option. Try again." ;;
         esac
         echo
@@ -170,6 +196,15 @@ KeyGenerator() {
         y) key_to_file ;;
         n) return ;;
     esac
+}
+
+gpg_key_generator() {
+    echo "Please enter private key password"
+    read password
+    echo "Please name file"
+    read filename
+    echo "Generating GPG key pair..."
+    gpg --full-generate-key --output $filename
 }
 
 key_to_file() {
