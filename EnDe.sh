@@ -1,5 +1,6 @@
 #!/bin/bash
 
+brew install argon2
 
 BLUE='\033[1;34m'
 NC='\033[0m'
@@ -50,7 +51,7 @@ Encryption_Menu() {
         echo "1) Encrypt with existing key file"
         echo "2) Back"
         echo "3) Encrypt with aysemetric key (Not implemented)"
-        echo -n "Enter choice [1-2]: "
+        echo -n "Enter choice [1-3]: "
         read subchoice
         case $subchoice in
             1)
@@ -95,9 +96,7 @@ Encryption_Menu() {
                 fi
                 ;;
             2) return ;;
-            3)  open ssl gpg -h
-                # Placeholder for future asymmetric encryption implementation
-                ;;
+            3)  gpg_encrypt;;
                
             *) echo "Invalid option. Try again." ;;
         esac
@@ -110,7 +109,8 @@ Decryption_Menu() {
         echo "---- DECRYPTION MENU ----"
         echo "1) Decrypt with existing key file"
         echo "2) Back"
-        echo -n "Enter choice [1-2]: "
+        echo "3) Decrypt with aysemetric key"
+        echo -n "Enter choice [1-3]: "
         read subchoice
         case $subchoice in
             1)
@@ -155,6 +155,7 @@ Decryption_Menu() {
                 fi
                 ;;
             2) return ;;
+            3) gpg_decrypt ;;
             *) echo "Invalid option. Try again." ;;
         esac
         echo
@@ -165,13 +166,15 @@ Decryption_Menu() {
 Key_Menu() {
     while true; do
         echo "---- KEY MENU ----"
-        echo "1) Generate New Key"
-        echo "2) Back"
-        echo -n "Enter choice [1-2]: "
+        echo "1) Generate New Symmetric Key"
+        echo "2) Generate New Aysmetric Key"
+        echo "3) Back"
+        echo -n "Enter choice [1-3]: "
         read subchoice
         case $subchoice in
             1) KeyGenerator ;;
-            2) return ;;
+            2) gpg_key_generator ;;
+            3) return ;;
             *) echo "Invalid option. Try again." ;;
         esac
         echo
@@ -197,16 +200,40 @@ KeyGenerator() {
         n) return ;;
     esac
 }
-
+gpg_encrypt() {
+    echo "Please enter public key name"
+    read -r public_filename
+    echo "Please enter file to encrypt"
+    read -r to_encrypt_file
+    echo "Please enter output file name"
+    read -r out_file
+    openssl pkeyutl -encrypt -pubin -inkey "$public_filename".txt -in "$to_encrypt_file" -out "$out_file".txt
+    rm "$to_encrypt_file"
+}
 gpg_key_generator() {
-    echo "Please enter private key password"
-    read password
-    echo "Please name file"
-    read filename
-    echo "Generating GPG key pair..."
-    gpg --full-generate-key --output $filename
+    echo "Please enter private key name"
+    read -r private_filename
+    echo "Please enter public key name"
+    read -r public_filename
+    echo "Generating rsa key pair..."
+    openssl genrsa -out "$private_filename".txt 4096 
+    openssl rsa -in "$private_filename".txt -pubout -out "$public_filename".txt
+
+    gpg -c "$private_filename".txt
+    rm "$private_filename".txt
 }
 
+gpg_decrypt() {
+    echo "Please enter private key name"
+    read -r private_key 
+    echo "Please enter file to decrypt"
+    read -r to_decrypt_file
+    echo "Please enter output file name"
+    read -r out_file
+    openssl pkeyutl -decrypt -inkey "$private_key".txt -in "$to_decrypt_file" -out "$out_file"
+    rm "$to_decrypt_file"
+    
+}
 key_to_file() {
     echo "Please name the key file:"
     read filename
@@ -233,11 +260,13 @@ key_to_file() {
     echo "SALT=$SALT" >> "$tmpfile"
 
     # Encrypt the key file with user’s password
-    openssl enc -aes-256-cbc -salt -pbkdf2 -in "$tmpfile" -out "$filename" -pass pass:"$keypass"
+    openssl enc -aes-256-cbc -salt -pbkdf2 -in "$tmpfile" -out "$filename" -p pass:"$keypass"
 
     rm -f "$tmpfile"
     echo "Encrypted key file saved -> $filename"
 }
 
 # Start program
+#        read choice
+
 main_menu
